@@ -4,55 +4,53 @@
 
 //闭包示例
 function outer() {
-    var a = 1;
-    function inner() {
-        console.log(a);
-    }
-    return inner;
+  var a = 1;
+  function inner() {
+    console.log(a);
+  }
+  return inner;
 }
 
 var fn = outer();
 fn(); //输出1
 
-
 //闭包应用场景
 //1.封装私有变量
 function Counter() {
-    var count = 0;
-    return {
-        increment: function () {
-            count++;
-            console.log(count);
-        },
-        decrement: function () {
-            count--;
-            console.log(count);
-        }
-    }
+  var count = 0;
+  return {
+    increment: function () {
+      count++;
+      console.log(count);
+    },
+    decrement: function () {
+      count--;
+      console.log(count);
+    },
+  };
 }
 
-var counter1 = Counter(); //创建一个计数器  
+var counter1 = Counter(); //创建一个计数器
 counter1.increment(); //输出1
 counter1.decrement(); //输出0
 
 var counter2 = Counter(); //创建另一个计数器
 counter2.increment(); //输出1
 
-
 //2.实现柯里化
 function add(a, b) {
-    return a + b;
+  return a + b;
 }
 
 function curry(fn) {
-    return function (a) {
-        return function (b) {
-            return fn(a, b);
-        }
-    }
+  return function (a) {
+    return function (b) {
+      return fn(a, b);
+    };
+  };
 }
 
-var add5 = curry(add)(5); 
+var add5 = curry(add)(5);
 console.log(add5(10)); //输出15
 console.log(add5(20)); //输出25
 console.log(add5(30)); //输出35
@@ -69,26 +67,26 @@ console.log(add5(30)); //输出35
 //防抖和节流示例：
 //防抖示例：
 function debounce(fn, delay) {
-    let timer = null;
-    return function () {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            fn.apply(this, arguments);
-        }, delay);
-    }
+  let timer = null;
+  return function () {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      fn.apply(this, arguments);
+    }, delay);
+  };
 }
 
 //节流示例：
 function throttle(fn, delay) {
-    let timer = null;
-    return function () {
-        if (!timer) {
-            timer = setTimeout(() => {
-                fn.apply(this, arguments);
-                timer = null;
-            }, delay);
-        }
+  let timer = null;
+  return function () {
+    if (!timer) {
+      timer = setTimeout(() => {
+        fn.apply(this, arguments);
+        timer = null;
+      }, delay);
     }
+  };
 }
 
 //闭包总结：闭包是一种编程技巧，可以延长变量的生命周期，保护私有变量，提高函数的复用性，减少代码冗余，但是容易造成内存泄漏，内存占用过多，代码可读性降低，函数嵌套过多。
