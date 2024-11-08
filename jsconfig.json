@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "noLib": true // 禁用标准库的类型提示
+  },
+  "exclude": ["node_modules", "**/*.d.ts"] // 排除所有 .d.ts 文件
+}

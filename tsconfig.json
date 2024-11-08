@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "typeRoots": [
+      "./node_modules/@types", // 默认的类型定义路径
+      "./types", // 自定义类型定义路径（如有）
+      "./typings" // 其他自定义路径
+    ]
+  }
+}

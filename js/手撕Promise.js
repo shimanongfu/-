@@ -2,77 +2,122 @@ const PENDING = 'pending';
 const FULFILLED = 'fulfilled';
 const REJECTED = 'rejected';
 
-function myPromise(executor) {
-  this.state = PENDING;
-  this.value;
-  let handlers = [];
+// 根据运行环境定义queueMicrotask函数
+function runMicroTasks(fn) {
+  // 原生支持
+  if (typeof queueMicrotask === 'function') {
+    return queueMicrotask(fn);
+  }
+  // node环境
+  if (typeof process !== 'undefined' && process.nextTick) {
+    return process.nextTick(fn);
+  }
+  // 浏览器环境
+  if (typeof MutationObserver !== 'undefined') {
+    const text = document.createTextNode('');
+    const observer = new MutationObserver(fn);
+    observer.observe(text, { characterData: true });
+    text.data = 0;
+  }
+  // 最后使用setTimeout
+  return setTimeout(fn, 0);
+}
 
-  this.then = (onFulfilled, onRejected) => {
-    return new myPromise((resolve, reject) => {
-      let res;
-      if (this.state === FULFILLED) {
-        queueMicrotask(() => {
-          res = onFulfilled(this.value);
-          resolve(res);
-        });
-      }
-      if (this.state === REJECTED) {
-        queueMicrotask(() => {
-          res = onRejected(this.value);
-          reject(res);
-        });
-      }
-      if (this.state === PENDING) {
-        handlers.push(() => {
-          if (this.state === FULFILLED) {
-            res = onFulfilled(this.value);
-            resolve(res);
-          }
-          if (this.state === REJECTED) {
-            res = onRejected(this.value);
-            reject(res);
-          }
-        });
-      }
-    });
-  };
+class MyPromise {
+  #state = PENDING;
+  #value;
+  #handlers = [];
 
-  function setState(state, val) {
-    if (state !== PENDING) {
-      this.state = state;
-      this.value = val;
-      handlers.length && handlers.forEach((handler) => handler());
-      handlers = [];
+  constructor(executor) {
+    try {
+      executor(this.#resolve.bind(this), this.#reject.bind(this));
+    } catch (err) {
+      this.#reject(err);
     }
   }
 
-  let resolve = (value) => {
-    setState.call(this, FULFILLED, value);
-  };
-  let reject = (reason) => {
-    setState.call(this, REJECTED, reason);
-  };
-
-  try {
-    executor.call(this, resolve, reject);
-  } catch (error) {
-    reject(error);
+  then(onFulfilled, onRejected) {
+    return new MyPromise((resolve, reject) => {
+      this.#handlers.push(() => {
+        runMicroTasks(() => {
+          try {
+            const cb = this.#state === FULFILLED ? onFulfilled : onRejected;
+            const res = typeof cb === 'function' ? cb(this.#value) : this.#value;
+            if (typeof res?.then === 'function') {
+              res.then(resolve, reject);
+            } else {
+              resolve(res);
+            }
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+      this.#run();
+    });
   }
 
-  return this;
+  catch(onRejected) {
+    return this.then(null, onRejected);
+  }
+
+  finally(onFinally) {
+    return this.then(
+      (value) => MyPromise.resolve(onFinally()).then(() => value),
+      (reason) =>
+        MyPromise.resolve(onFinally()).then(() => {
+          throw reason;
+        })
+    );
+  }
+
+  #setState(state, val) {
+    if (this.#state !== PENDING) return;
+    this.#state = state;
+    this.#value = val;
+    this.#run();
+  }
+
+  #run() {
+    if (this.#state !== PENDING) {
+      this.#handlers.forEach((cb) => cb());
+      this.#handlers = [];
+    }
+  }
+
+  #resolve(value) {
+    this.#setState(FULFILLED, value);
+  }
+
+  #reject(reason) {
+    this.#setState(REJECTED, reason);
+  }
+
+  static resolve(value) {
+    return new MyPromise((resolve, reject) => resolve(value));
+  }
+
+  static reject(reason) {
+    return new MyPromise((resolve, reject) => reject(reason));
+  }
 }
 
-let p1 = new myPromise((resolve, reject) => {
-  // setTimeout(() => {
-  reject('err');
-  // }, 1000);
+let p1 = new MyPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve('success');
+  }, 1000);
 });
 
 let p2 = p1
   .then(
     (res) => {
-      console.log('success1==>', res);
-      return 'success1';
+      // console.log('success1==>', res);
+      // return 'success1';
+      return new MyPromise((resolve, reject) => {
+        setTimeout(() => {
+          resolve('success1');
+        });
+      });
     },
     (err) => {
       console.log('err1==>', err);
@@ -89,13 +134,17 @@ let p2 = p1
       return 'err11';
     }
   )
-  .then(
-    (res) => {
-      console.log('success111==>', res);
-    },
-    (err) => {
-      console.log('err111==>', err);
-    }
-  );
+  .catch((err) => {
+    console.log('catch==>', err);
+  })
+  .finally(() => {
+    console.log('finally==>');
+  });
 
-console.log('阻塞了吗');
+console.log('阻塞了吗?');
+
+(async () => {
+  console.log(p2);
+  let res = await p2;
+  console.log('await==>', res);
+})();
