@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文件上传</title>
+    <script src="./api.js"></script>
+  </head>
+  <body>
+    <div>
+      <form action="http://localhost:8000/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" />
+        <input type="submit" value="上传" />
+      </form>
+      <!-- <input type="file" name="file" id="selectFile" /> -->
+      <!-- <p>
+        <button onclick="uploadFile()">上传文件</button>
+      </p> -->
+    </div>
+  </body>
+</html>

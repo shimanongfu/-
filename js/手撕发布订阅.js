@@ -10,7 +10,7 @@ class myEE {
   emit(name, ...args) {
     this.#events.forEach((cb) => {
       if (cb.name === name) {
-        cb.fn(...args);
+        cb.fn.call(this, ...args);
         if (cb.once) {
           this.off(name, cb.fn);
         }
@@ -35,9 +35,15 @@ ee.once('a', (a, b) => {
   console.log(a, b);
 });
 
-ee.on('a', (a, b) => {
-  console.log(a + b);
-});
+ee.on('a', test);
+
+function test() {
+  console.log(this instanceof myEE);
+  test2(this);
+}
+
+function test2() {
+  console.log('test2');
+}
 
 ee.emit('a', 1, 2);
-ee.emit('a', 2, 2);
